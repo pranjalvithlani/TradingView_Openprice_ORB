@@ -1,0 +1,125 @@
+//@version=6
+indicator("OpenPrice + ORB", "OpenPrice ORB", overlay = true, max_lines_count = 10, max_labels_count = 10)
+
+const string NY_TZ = "America/New_York"
+const string LEVEL_TIMEFRAME = "1"
+const int SESSION_OPEN_HOUR = 9
+const int SESSION_OPEN_MINUTE = 30
+const int SESSION_CLOSE_HOUR = 16
+const int SESSION_CLOSE_MINUTE = 0
+const int LABEL_OFFSET_BARS = 2
+
+bool showOpenInput = input.bool(true, "Show OpenPrice")
+bool showOrbInput = input.bool(true, "Show ORB")
+int orbMinutesInput = input.int(15, "ORB Duration Minutes", minval = 1)
+color openColorInput = input.color(color.yellow, "OpenPrice Line Color")
+color orbHighColorInput = input.color(color.lime, "ORB High Color")
+color orbLowColorInput = input.color(color.red, "ORB Low Color")
+int lineWidthInput = input.int(2, "Line Width", minval = 1, maxval = 5)
+
+priceText(string levelName, float price) =>
+    levelName + " " + str.tostring(price, format.mintick)
+
+sessionLevels(int orbMinutes) =>
+    int dataYear = year(time, NY_TZ)
+    int dataMonth = month(time, NY_TZ)
+    int dataDayOfMonth = dayofmonth(time, NY_TZ)
+    int currentDay = dataYear * 10000 + dataMonth * 100 + dataDayOfMonth
+    int sessionOpenTime = timestamp(NY_TZ, dataYear, dataMonth, dataDayOfMonth, SESSION_OPEN_HOUR, SESSION_OPEN_MINUTE, 0)
+    int sessionCloseTime = timestamp(NY_TZ, dataYear, dataMonth, dataDayOfMonth, SESSION_CLOSE_HOUR, SESSION_CLOSE_MINUTE, 0)
+    int orbEndTime = sessionOpenTime + orbMinutes * 60 * 1000
+    bool inSession = time >= sessionOpenTime and time < sessionCloseTime
+    bool inOrbWindow = time >= sessionOpenTime and time < orbEndTime
+
+    var int storedDay = na
+    var float storedOpenPrice = na
+    var float storedOrbHigh = na
+    var float storedOrbLow = na
+    if na(storedDay) or currentDay != storedDay
+        storedDay := currentDay
+        storedOpenPrice := na
+        storedOrbHigh := na
+        storedOrbLow := na
+
+    if inSession and na(storedOpenPrice)
+        storedOpenPrice := open
+
+    if inOrbWindow
+        storedOrbHigh := na(storedOrbHigh) ? high : math.max(storedOrbHigh, high)
+        storedOrbLow := na(storedOrbLow) ? low : math.min(storedOrbLow, low)
+
+    [currentDay, storedOpenPrice, storedOrbHigh, storedOrbLow, sessionOpenTime, sessionCloseTime]
+
+upsertLine(line lineId, int startTime, int endTime, float price, color lineColor, int lineWidth) =>
+    line result = lineId
+    if na(result)
+        result := line.new(startTime, price, endTime, price, xloc = xloc.bar_time, extend = extend.none, color = lineColor, width = lineWidth)
+    else
+        line.set_xy1(result, startTime, price)
+        line.set_xy2(result, endTime, price)
+        line.set_color(result, lineColor)
+        line.set_width(result, lineWidth)
+    result
+
+upsertLabel(label labelId, int labelIndex, float price, string labelText, color labelColor) =>
+    label result = labelId
+    if na(result)
+        result := label.new(labelIndex, price, labelText, xloc = xloc.bar_index, style = label.style_none, textcolor = labelColor, size = size.small, textalign = text.align_left)
+    else
+        label.set_x(result, labelIndex)
+        label.set_y(result, price)
+        label.set_text(result, labelText)
+        label.set_textcolor(result, labelColor)
+        label.set_textalign(result, text.align_left)
+    result
+
+[tradingDay, openPrice, orbHigh, orbLow, sessionOpenTime, sessionCloseTime] = request.security(syminfo.tickerid, LEVEL_TIMEFRAME, sessionLevels(orbMinutesInput), gaps = barmerge.gaps_off, lookahead = barmerge.lookahead_off)
+
+bool validChart = timeframe.isintraday
+
+var int activeTradingDay = na
+var line openLine = na
+var line orbHighLine = na
+var line orbLowLine = na
+var label openLabel = na
+var label orbHighLabel = na
+var label orbLowLabel = na
+
+bool hasDrawings = not na(openLine) or not na(orbHighLine) or not na(orbLowLine) or not na(openLabel) or not na(orbHighLabel) or not na(orbLowLabel)
+bool resetForInvalidChart = not validChart and (hasDrawings or not na(activeTradingDay))
+bool resetForNewDay = validChart and not na(tradingDay) and (na(activeTradingDay) or tradingDay != activeTradingDay)
+
+if resetForInvalidChart or resetForNewDay
+    if not na(openLine)
+        line.delete(openLine)
+    if not na(orbHighLine)
+        line.delete(orbHighLine)
+    if not na(orbLowLine)
+        line.delete(orbLowLine)
+    if not na(openLabel)
+        label.delete(openLabel)
+    if not na(orbHighLabel)
+        label.delete(orbHighLabel)
+    if not na(orbLowLabel)
+        label.delete(orbLowLabel)
+
+    openLine := na
+    orbHighLine := na
+    orbLowLine := na
+    openLabel := na
+    orbHighLabel := na
+    orbLowLabel := na
+    activeTradingDay := validChart ? tradingDay : na
+
+if validChart
+    int labelIndex = bar_index + LABEL_OFFSET_BARS
+
+    if showOpenInput and not na(openPrice) and not na(sessionOpenTime) and not na(sessionCloseTime)
+        openLine := upsertLine(openLine, sessionOpenTime, sessionCloseTime, openPrice, openColorInput, lineWidthInput)
+        openLabel := upsertLabel(openLabel, labelIndex, openPrice, priceText("OpenPrice", openPrice), openColorInput)
+
+    if showOrbInput and not na(orbHigh) and not na(orbLow) and not na(sessionOpenTime) and not na(sessionCloseTime)
+        orbHighLine := upsertLine(orbHighLine, sessionOpenTime, sessionCloseTime, orbHigh, orbHighColorInput, lineWidthInput)
+        orbLowLine := upsertLine(orbLowLine, sessionOpenTime, sessionCloseTime, orbLow, orbLowColorInput, lineWidthInput)
+        orbHighLabel := upsertLabel(orbHighLabel, labelIndex, orbHigh, priceText("ORB High", orbHigh), orbHighColorInput)
+        orbLowLabel := upsertLabel(orbLowLabel, labelIndex, orbLow, priceText("ORB Low", orbLow), orbLowColorInput)
