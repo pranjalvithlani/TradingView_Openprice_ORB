@@ -1,3 +1,4 @@
+// © Ambar Legacy
 //@version=6
 indicator("OpenPrice + ORB", "OpenPrice ORB", overlay = true, max_lines_count = 10, max_labels_count = 10)
 
