@@ -6,7 +6,10 @@ const int SESSION_OPEN_HOUR = 9
 const int SESSION_OPEN_MINUTE = 30
 const int SESSION_CLOSE_HOUR = 16
 const int SESSION_CLOSE_MINUTE = 0
+const int LABEL_OFFSET_BARS = 2
 
+bool showOpenInput = input.bool(true, "Show Open Price")
+bool showOrbInput = input.bool(true, "Show ORB")
 int orbMinutesInput = input.int(15, "ORB Duration Minutes", minval = 1)
 color openColorInput = input.color(color.yellow, "Open Line Color")
 color orbHighColorInput = input.color(color.lime, "ORB High Color")
@@ -49,7 +52,7 @@ int orbEndTime = sessionOpenTime + orbSeconds * 1000
 int sessionCloseTime = timestamp(NY_TZ, nyYear, nyMonth, nyDay, SESSION_CLOSE_HOUR, SESSION_CLOSE_MINUTE, 0)
 
 int chartSeconds = timeframe.in_seconds()
-bool validChart = timeframe.isintraday and chartSeconds <= orbSeconds and orbSeconds % chartSeconds == 0
+bool validChart = timeframe.isintraday
 bool inSession = validChart and time >= sessionOpenTime and time < sessionCloseTime
 bool inOrbWindow = inSession and time >= sessionOpenTime and time < orbEndTime
 bool reachedSession = validChart and time >= sessionOpenTime
@@ -106,13 +109,14 @@ if inOrbWindow
     orbLow := na(orbLow) ? low : math.min(orbLow, low)
 
 if reachedSession
-    int labelTime = time < sessionCloseTime ? time : sessionCloseTime
+    int labelOffsetMs = chartSeconds * 1000 * LABEL_OFFSET_BARS
+    int labelTime = math.min(time + labelOffsetMs, sessionCloseTime)
 
-    if not na(sessionOpenPrice)
+    if showOpenInput and not na(sessionOpenPrice)
         openLine := upsertLine(openLine, openStartTime, sessionCloseTime, sessionOpenPrice, openColorInput, lineWidthInput)
         openLabel := upsertLabel(openLabel, labelTime, sessionOpenPrice, priceText("Open", sessionOpenPrice), openColorInput)
 
-    if not na(orbHigh) and not na(orbLow)
+    if showOrbInput and not na(orbHigh) and not na(orbLow)
         orbHighLine := upsertLine(orbHighLine, sessionOpenTime, sessionCloseTime, orbHigh, orbHighColorInput, lineWidthInput)
         orbLowLine := upsertLine(orbLowLine, sessionOpenTime, sessionCloseTime, orbLow, orbLowColorInput, lineWidthInput)
         orbHighLabel := upsertLabel(orbHighLabel, labelTime, orbHigh, priceText("ORB High", orbHigh), orbHighColorInput)

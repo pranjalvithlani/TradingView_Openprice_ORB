@@ -19,6 +19,8 @@ It plots only:
 - Session timezone: `America/New_York`
 - Regular session open: 9:30 AM ET
 - Regular session close: 4:00 PM ET
+- Show open price: on
+- Show ORB: on
 - ORB duration: 15 minutes
 - Open line: yellow
 - ORB high line: green
@@ -29,9 +31,11 @@ It plots only:
 
 The indicator is optimized for SPX but can run on other symbols. It shows only the latest trading day loaded on the chart.
 
-The script hides itself on daily, weekly, and monthly charts. It also hides when the chart timeframe is greater than the selected ORB duration or when the timeframe does not divide the ORB duration cleanly. This keeps ORB levels from accidentally including price action after the opening range window.
+The script hides its levels on daily, weekly, and monthly charts. It shows the open price and ORB levels on all intraday chart intervals, including intervals that do not divide the ORB duration cleanly.
 
-For example, a 15-minute ORB works on compatible seconds charts, 1-minute, 3-minute, 5-minute, and 15-minute charts. It hides on 10-minute and 30-minute charts.
+Labels sit two bars to the right of the latest regular-session bar for breathing room and stop at 4:00 PM ET.
+
+Use **Show Open Price** and **Show ORB** in the indicator settings to hide either group of levels.
 
 ## Manual Validation
 
@@ -41,10 +45,10 @@ Use these checks in TradingView:
 - During the ORB window, ORB high and ORB low update live.
 - After the ORB window ends, ORB high and ORB low stop changing.
 - Lines project to 4:00 PM ET.
-- Labels move with the latest regular-session bar and stop at 4:00 PM ET.
-- Compatible seconds charts show the same behavior.
-- A 10-minute chart hides when ORB duration is 15 minutes.
-- A 30-minute chart hides when ORB duration is 15 minutes.
+- Labels move two bars ahead of the latest regular-session bar and stop at 4:00 PM ET.
+- Seconds charts and non-divisible intraday charts such as 2-minute and 10-minute still show levels.
+- Turning off **Show Open Price** hides the open line and label.
+- Turning off **Show ORB** hides ORB high and ORB low lines and labels.
 - Daily, weekly, and monthly charts hide.
 - Loading a new trading day clears prior levels.
 

@@ -20,7 +20,7 @@ Rejected alternatives:
 
 ## Core Behavior
 
-The indicator runs only on intraday charts whose timeframe is less than or equal to the selected ORB duration, including seconds charts. It hides on daily, weekly, and monthly charts.
+The indicator runs on all intraday charts, including seconds charts and intervals that do not divide the ORB duration cleanly. It hides on daily, weekly, and monthly charts.
 
 All session logic uses `America/New_York` time:
 
@@ -28,9 +28,9 @@ All session logic uses `America/New_York` time:
 - ORB end: 9:30 AM ET plus the configured ORB duration
 - regular session close: 4:00 PM ET
 
-At the first valid regular-session bar at or after 9:30 AM ET, the script captures that bar's open as the session open price. It draws a horizontal open line from the open bar to 4:00 PM ET and shows a label with the open price.
+At the first valid regular-session bar at or after 9:30 AM ET, the script captures that bar's open as the session open price. It draws a horizontal open line from the open bar to 4:00 PM ET and shows a label with the open price when `Show Open Price` is enabled.
 
-During the ORB window, the script updates the ORB high and ORB low live. After the ORB window ends, those values lock for the rest of the session. ORB high and low lines also extend to 4:00 PM ET, with labels for each level.
+During the ORB window, the script updates the ORB high and ORB low live. After the ORB window ends, those values lock for the rest of the session. ORB high and low lines also extend to 4:00 PM ET, with labels for each level, when `Show ORB` is enabled.
 
 Only the current trading day is shown. Prior session drawings are deleted or reused when a new session begins.
 
@@ -39,6 +39,8 @@ Only the current trading day is shown. Prior session drawings are deleted or reu
 Settings stay minimal:
 
 - `ORB Duration Minutes`: integer input, default `15`, minimum `1`
+- `Show Open Price`: boolean input, default `true`
+- `Show ORB`: boolean input, default `true`
 - `Open Line Color`: default bright neutral/yellow
 - `ORB High Color`: default green
 - `ORB Low Color`: default red
@@ -54,7 +56,7 @@ Each active session can have exactly three horizontal lines and three labels:
 - `ORB High`
 - `ORB Low`
 
-Lines project immediately to 4:00 PM ET. Labels sit near the latest active session bar, move forward bar by bar, and show the current price text while levels are forming. Once a value locks, its label keeps displaying the locked price. Labels do not move beyond the regular session close.
+Lines project immediately to 4:00 PM ET. Labels sit two bars to the right of the latest active session bar, move forward bar by bar, and show the current price text while levels are forming. Once a value locks, its label keeps displaying the locked price. Labels do not move beyond the regular session close.
 
 ## Data Flow and Edge Cases
 
@@ -71,18 +73,17 @@ After 4:00 PM ET, the completed current-day levels remain visible when viewing t
 Invalid chart contexts stay quiet:
 
 - daily, weekly, and monthly charts hide the indicator
-- intraday chart timeframes greater than the ORB duration hide the indicator
 
 ## Validation Plan
 
 Manual TradingView validation is sufficient for this focused Pine indicator:
 
-- SPX 1-minute, 5-minute, and 15-minute charts show the open, live ORB, then locked ORB.
+- SPX 1-minute, 2-minute, 5-minute, 10-minute, and 15-minute charts show the open, live ORB, then locked ORB.
 - Seconds charts show the same behavior.
-- A 30-minute chart hides when ORB duration is 15 minutes.
 - Daily charts hide.
 - A new trading day clears prior levels and shows only the current day.
-- Labels move with the latest session bar and stop after 4:00 PM ET.
+- Labels move two bars ahead of the latest session bar and stop after 4:00 PM ET.
+- Settings can independently hide open-price levels or ORB levels.
 
 ## Out of Scope
 
