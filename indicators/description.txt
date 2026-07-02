@@ -1,0 +1,10 @@
+OpenPrice + ORB is a simple intraday level-plotting indicator.
+
+It marks the regular New York session open price at 9:30 AM ET and plots the Opening Range Breakout high and low for the current trading day. The ORB duration is customizable, with a 15-minute default.
+
+The script is intentionally focused on levels only. It does not include signals, alerts, strategy entries, backtesting, or historical session plotting. OpenPrice and ORB can be toggled on or off independently, with customizable line colors and width.
+
+Designed for clean intraday charting across symbols and timeframes. Levels are hidden on daily and higher timeframes.
+
+
+For informational and educational use only. Not financial advice.
