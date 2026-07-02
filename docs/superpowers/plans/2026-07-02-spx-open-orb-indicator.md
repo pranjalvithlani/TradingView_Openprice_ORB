@@ -62,10 +62,10 @@ color orbHighColorInput = input.color(color.lime, "ORB High Color")
 color orbLowColorInput = input.color(color.red, "ORB Low Color")
 int lineWidthInput = input.int(2, "Line Width", minval = 1, maxval = 5)
 
-string priceText(string levelName, float price) =>
+priceText(string levelName, float price) =>
     levelName + " " + str.tostring(price, format.mintick)
 
-line upsertLine(line lineId, int startTime, int endTime, float price, color lineColor, int lineWidth) =>
+upsertLine(line lineId, int startTime, int endTime, float price, color lineColor, int lineWidth) =>
     line result = lineId
     if na(result)
         result := line.new(startTime, price, endTime, price, xloc = xloc.bar_time, extend = extend.none, color = lineColor, width = lineWidth)
@@ -76,14 +76,14 @@ line upsertLine(line lineId, int startTime, int endTime, float price, color line
         line.set_width(result, lineWidth)
     result
 
-label upsertLabel(label labelId, int labelTime, float price, string text, color labelColor) =>
+upsertLabel(label labelId, int labelTime, float price, string labelText, color labelColor) =>
     label result = labelId
     if na(result)
-        result := label.new(labelTime, price, text, xloc = xloc.bar_time, style = label.style_none, textcolor = labelColor, size = size.small)
+        result := label.new(labelTime, price, labelText, xloc = xloc.bar_time, style = label.style_none, textcolor = labelColor, size = size.small)
     else
         label.set_x(result, labelTime)
         label.set_y(result, price)
-        label.set_text(result, text)
+        label.set_text(result, labelText)
         label.set_textcolor(result, labelColor)
     result
 
